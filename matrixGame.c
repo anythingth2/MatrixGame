@@ -57,9 +57,10 @@ int matrixColorCode[] = {
     DARK_GREEN,
     BLACK};
 
+
 void clearFlowMatrix(int x)
 {
-    for (int i = 0; i < 25; i++)
+       for (int i = 0; i < 25; i++)
     {
         setTextColor(BLACK);
         printCharAt(x, i);
@@ -80,6 +81,9 @@ void printFlowMatrix(int x, int matrixY)
 
 void refreshLife()
 {
+    gotoxy(10,0);
+    setTextColor(WHITE);
+    printf("%d",life);
 }
 void onGotDamaged()
 {
@@ -95,21 +99,26 @@ void checkMatrixEnded(int _x, int *_matrixY)
         onGotDamaged();
         *_matrixY = START_MATRIX_Y;
         clearFlowMatrix(_x);
+
     }
 }
 void checkBulletCollisMatrix()
 {
-    for (int i = 0; i < numMatrix; i++)
+    for (int x = 0; x < numMatrix; x++)
     {
-        for (int j = 0; j < numBullet; j++)
+        for (int y = 0; y < numBullet; y++)
         {
-            if (bulletX[j] == i)
+            if (bulletX[y] == x)
             {
-                if (bulletY[j] == matrixY[i])
-                {
-                    onGetScore();
-                    matrixY[i] = START_MATRIX_Y;
-                    clearFlowMatrix(i);
+                
+                if (matrixY[x]>=1){
+                    if (bulletY[y]-1 == matrixY[x])
+                    {
+                        onGetScore();
+                        refreshLife();
+                        matrixY[x] = START_MATRIX_Y;
+                        clearFlowMatrix(x);
+                    }
                 }
             }
         }
@@ -211,6 +220,7 @@ void onControl()
 int main()
 {
     system("cls");
+    refreshLife();
     initMatrix();
     for (;;)
     {
