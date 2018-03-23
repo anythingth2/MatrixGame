@@ -222,6 +222,8 @@ int main()
             checkBulletCollisMatrix();
             count_delay_matrix = 0;
         }
+
+        
         if (kbhit())
             onControl();
 
@@ -230,6 +232,8 @@ int main()
 
     return 0;
 }
+
+
 void gotoxy(int x, int y)
 {
     COORD coord;
