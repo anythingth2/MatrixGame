@@ -18,6 +18,7 @@ WINDOW_BOTTOM   db  20
 printFlowMatrix_X   db  ?
 printFlowMatrix_Y   db  ?
 
+
 START_MATRIX_Y  db  -30
 
 matrixY         db  80 dup(?)
@@ -27,25 +28,25 @@ i               db  0h
     org     0100h
 
 main:
-    
-initMatrix:
-    mov     bl,WINDOW_LEFT
+  
+initMatrix:                             ;initilize matrix line
+    mov     bl,WINDOW_LEFT              ;looping around window size
     mov     i,bl
-loop_initMatrix:
+loop_initMatrix:                        ;initilize by random number to matrixY
     mov     bx,0
     mov     bl,WINDOW_RIGHT
 
     cmp     i,bl
     jge     End_Loop_initMatrix
 
-    mov     dl,START_MATRIX_Y
-    neg     dl
+    mov     dl,START_MATRIX_Y           ;random number from START_MATRIX_Y to 0
+    neg     dl                          
     mov     dh,0
     call    random_number
     neg     dl
 
 
-    mov     si,offset matrixY
+    mov     si,offset matrixY           ;store in matrixY
     add     si,word ptr [i]
     mov     [si],dl
 
@@ -55,17 +56,23 @@ loop_initMatrix:
 End_Loop_initMatrix:
 
 
-Game_loop:
+Game_loop:                      
 
-    call    updateMatrix
+    call    updateMatrix                ;update matrix function
 
-    call    sleep
-    call    sleep
+
+
+    call    sleep                       ;delaying
+
 
     jmp     Game_loop
     ret
-updateMatrix:
-    push    cx
+
+
+
+
+updateMatrix:                           ;make matrix go down 
+    push    cx                          ;and check matrix is ended
     push    si
 
     mov     cx,0
@@ -141,8 +148,7 @@ printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM:
     mov     dl,i
     add     si,dx
     mov     bl,[si]
-    ; mov     logging,cl
-    ; call    logging_number
+
 
     mov     dh,cl
     mov     dl,printFlowMatrix_X
@@ -216,21 +222,32 @@ printRandomCharAt:                          ;print random character at position 
 
     push    ax
     push    cx
+                                    
+    mov     ax,0B800h                       ;select video ram address
+    mov     es,ax                           
 
-    mov     ah,02h                          
-    mov     bh,0h                           ;move cursor
-    int     10h                             ;call move cursor interrupt                                     
+    mov     ax,0                            ;calculate address from row and column
+    mov     al,dh                           ;by (row*80 + column)*2
+    mov     cx,80
+    push    dx
+    mul     cx
+    pop     dx
+    mov     dh,0
+    add     ax,dx
+    mov     dx,02h
+    mul     dx
+    mov     di,ax                           ;store address offset to di
+    
+
 
     mov     dh,33
     mov     dl,126
     call    random_number                   ;random character decimal number
 
-
-    mov     ah,09h                          ;print character
+    mov     ah,bl                           ;store color data
     mov     al,dl                           ;store character
-    mov     bh,0h                         
-    mov     cx,1h
-    int     10h                             ;call print character interrupt
+    stosw                                   ;write video ram
+
 
     pop     cx
     pop     ax
