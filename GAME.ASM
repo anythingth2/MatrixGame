@@ -24,11 +24,17 @@ START_MATRIX_Y  db  -30
 matrixY         db  80 dup(?)
 
 i               db  0h
+
+letter          db  'opopopopopopopooop$'
     .code 
     org     0100h
 
 main:
-  
+
+    mov     bx,offset letter
+    mov     ch,02h
+    call    printStringAt
+    ret
 initMatrix:                             ;initilize matrix line
     mov     bl,WINDOW_LEFT              ;looping around window size
     mov     i,bl
@@ -60,17 +66,11 @@ Game_loop:
 
     call    updateMatrix                ;update matrix function
 
-
-
     call    sleep                       ;delaying
 
 
     jmp     Game_loop
     ret
-
-
-
-
 updateMatrix:                           ;make matrix go down 
     push    cx                          ;and check matrix is ended
     push    si
@@ -103,9 +103,6 @@ End_loop_updateMatrix:
     pop     si
     pop     cx
     ret
-
-
-
     
 printFlowMatrix:
     push    cx
@@ -238,8 +235,6 @@ printRandomCharAt:                          ;print random character at position 
     mul     dx
     mov     di,ax                           ;store address offset to di
     
-
-
     mov     dh,33
     mov     dl,126
     call    random_number                   ;random character decimal number
@@ -254,6 +249,67 @@ printRandomCharAt:                          ;print random character at position 
 
     ret
 
+printCharAt:                            ;print character at position (dh = row,dl = column)
+                                            ;color ( bh = color code)
+                                            ;chacracter (bl = ascii)
+
+    push    ax
+    push    cx
+                                    
+    mov     ax,0B800h                       ;select video ram address
+    mov     es,ax                           
+
+    mov     ax,0                            ;calculate address from row and column
+    mov     al,dh                           ;by (row*80 + column)*2
+    mov     cx,80
+    push    dx
+    mul     cx
+    pop     dx
+    mov     dh,0
+    add     ax,dx
+    mov     dx,02h
+    mul     dx
+    mov     di,ax                           ;store address offset to di
+    
+    mov     ax,bx                           ;store color data                                        ;store character
+    stosw                                   ;write video ram
+
+
+    pop     cx
+    pop     ax
+
+    ret
+printStringAt:                              ;print String at position (dh = row)
+                                            ;bx = String
+                                            ;ch = color
+    
+    push    ax
+    push    cx
+    push    dx
+    mov     di,0
+
+loop_printStringAt:                         ;print character until find '$'
+    
+
+    mov     ax,0B800h                       ;select video ram address
+    mov     es,ax                           
+    mov     ax,[bx]                          ;store color data  
+    cmp     al,'$'                          ;if character is '$' -> stop print
+    je      Exit_loop_printStringAt 
+    mov     ah,ch                                      ;store character
+    stosw                                   ;write video ram
+    add     bx,1
+    
+    
+
+    jmp     loop_printStringAt
+Exit_loop_printStringAt:
+
+    pop     dx
+    pop     cx
+    pop     ax
+
+    ret
 sleep:
     push    cx
     mov     cx,0ffffh
