@@ -19,22 +19,20 @@ printFlowMatrix_X   db  ?
 printFlowMatrix_Y   db  ?
 
 
-START_MATRIX_Y  db  -30
+START_MATRIX_Y  db  -150
 
 matrixY         db  80 dup(?)
 
 i               db  0h
 
-letter          db  'opopopopopopopooop$'
+xPos            db  0h
+
+
     .code 
     org     0100h
 
 main:
-
-    mov     bx,offset letter
-    mov     ch,02h
-    call    printStringAt
-    ret
+    
 initMatrix:                             ;initilize matrix line
     mov     bl,WINDOW_LEFT              ;looping around window size
     mov     i,bl
@@ -87,13 +85,14 @@ loop_updateMatrix:
     add     si,word ptr [i]
     add     [si],1
 
-    
     mov     cl,[si]
     mov     printFlowMatrix_Y,cl
     mov     ch,i
     mov     printFlowMatrix_X,ch
+    
     call    printFlowMatrix
     
+    call    checkMatrixEnded
 ;END_LOOP_BODY
 
     mov     si,offset i
@@ -104,6 +103,48 @@ End_loop_updateMatrix:
     pop     cx
     ret
     
+checkMatrixEnded:                       ;check Matrix line is bottom of window
+    push    dx
+    mov     dh,printFlowMatrix_X        ;if matrix on bottom -> take damagge
+    mov     dl,printFlowMatrix_Y        ;and start matrix again
+                                        ;and clear matrix
+
+    cmp     dl,WINDOW_BOTTOM
+    je      If_MatrixEnded
+Exit_If_MatrixEnded:
+
+
+    pop     dx
+    ret
+    
+If_MatrixEnded:
+    push    cx
+;start new matrix
+    mov     cx,0
+    mov     cl,dh
+    mov     si,offset matrixY
+    add     si,cx
+
+    mov     cx,0
+    mov     cl,START_MATRIX_Y
+    mov     [si],cl                                 
+;start new matrix END
+
+    ; mov     xPos,dh
+    call    clearFlowMatrix
+    
+    push    dx
+    push    bx
+    mov     dh,24
+    mov     dl,0
+    mov     bl,0fh
+    call    printRandomCharAt
+    pop     bx
+    pop     dx
+
+
+    pop     cx
+    jmp     Exit_If_MatrixEnded
 printFlowMatrix:
     push    cx
     push    bx
@@ -163,18 +204,30 @@ End_Loop_PrintFlowMatrix:
     pop     bx
     pop     cx
     ret
+clearFlowMatrix:
+    push    bx
+    push    cx
+    push    dx
 
-logging_number:
-    push    ax
+    mov     cx,0
+    mov     cl,WINDOW_BOTTOM
+
+
+    mov     dl,dh
     
-    mov     ah,0eh
-    mov     al,logging
-    add     al,'0'
-    int     10h
+loop_clearFlowMatrix:                   ;dh is Y-axis; dl is X-axis
+    mov     dh,cl
     
-    pop     ax
-    
-    ret      
+    mov     bh,00h
+    mov     bl,' '
+    call    printCharAt
+
+    loop    loop_clearFlowMatrix
+
+    pop     dx
+    pop     cx
+    pop     bx
+    ret
 random_number:              ;random number from dh to dl
     
     push    ax              ;backup value ax
@@ -219,6 +272,7 @@ printRandomCharAt:                          ;print random character at position 
 
     push    ax
     push    cx
+    push    dx
                                     
     mov     ax,0B800h                       ;select video ram address
     mov     es,ax                           
@@ -243,7 +297,7 @@ printRandomCharAt:                          ;print random character at position 
     mov     al,dl                           ;store character
     stosw                                   ;write video ram
 
-
+    pop     dx
     pop     cx
     pop     ax
 
@@ -255,6 +309,7 @@ printCharAt:                            ;print character at position (dh = row,d
 
     push    ax
     push    cx
+    push    dx
                                     
     mov     ax,0B800h                       ;select video ram address
     mov     es,ax                           
@@ -274,13 +329,13 @@ printCharAt:                            ;print character at position (dh = row,d
     mov     ax,bx                           ;store color data                                        ;store character
     stosw                                   ;write video ram
 
-
+    pop     dx
     pop     cx
     pop     ax
 
     ret
 printStringAt:                              ;print String at position (dh = row)
-                                            ;bx = String
+                                            ;bx = String address
                                             ;ch = color
     
     push    ax
@@ -299,8 +354,6 @@ loop_printStringAt:                         ;print character until find '$'
     mov     ah,ch                                      ;store character
     stosw                                   ;write video ram
     add     bx,1
-    
-    
 
     jmp     loop_printStringAt
 Exit_loop_printStringAt:
@@ -316,7 +369,13 @@ sleep:
 loop_sleep:
     nop                                     ;do nothing
     nop     
-    nop
+    nop                                     ;do nothing
+    nop     
+    nop                                     ;do nothing
+    nop     
+    nop                                     ;do nothing
+    nop     
+
     loop    loop_sleep                      ;loop until cx is zero
     pop     cx
     ret
