@@ -88,8 +88,6 @@ Game_loop:
     call    InIf_One                ;if (count_delay_matrix == DELAY_MATRIX)
     call    Inif_two 
 
-    
-
     call    sleep                       ;delaying
 
 
@@ -110,7 +108,7 @@ IfONE:   ;Pass
 
     ;updateMatrix
     call    updateMatrix                ;update matrix function
-    call updateBullet
+    call    updateBullet
     ;checkBulletCollisMatrix
 
     mov     count_delay_matrix,0        ;count_delay_matrix=0
@@ -333,6 +331,10 @@ updateBullet_Loop:;pass
     add     si,ax               ; bulletY[i]
     mov     ax,0                ; clear ax for tempAX
     mov     al,[si]             ; tempAX = bulletY[i]
+
+    cmp     al,WINDOW_TOP
+    jle     printBulletss
+    
     mov     temp,0
     mov     temp,al             ; temp = tempAX
     sub     temp,1              ;
@@ -340,7 +342,7 @@ updateBullet_Loop:;pass
     mov     ax,0
     mov     al,temp
     mov     [si],al             ;bulletY[i]--
-
+printBulletss:
     call    printBullet
 
     add     i_updateBullet,1            ;i++
