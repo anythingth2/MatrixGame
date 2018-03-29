@@ -30,7 +30,7 @@ xPos            db  0h
 ;------ variable for ship ----------------------------
 key		            db	0		;key status
 ship_x	            db	40		;ship x axis
-ship_y	            db	20		;ship y axis
+ship_y	            db	22		;ship y axis
 flag	            db	0
 
 ;------ variable for bullet --------------------------
@@ -273,32 +273,6 @@ Exit_If_checkBullet:
 
 If_Same_X_pos:
   
-;    mov     dh,24
-;     mov     dl,2
-;     call    printRandomCharAt
-
-    ; push    bx
-    ; push    dx
-    ; mov     dh,24
-    ; mov     dl,79
-    ; mov     bh,2fh
-    ; mov     bl,bl
-    ; add     bx,'0'
-    ; call    printCharAt
-    ; pop     dx
-    ; pop     bx
-
-    ; push    bx
-    ; push    dx
-    ; mov     dh,24
-    ; mov     dl,78
-    ; mov     bh,2fh
-    ; mov     bl,cl
-    ; add     bx,'0'
-    ; call    printCharAt
-    ; pop     dx
-    ; pop     bx
-
     mov     si,offset matrixY
     add     si,bx
     mov     ax,[si]
@@ -320,75 +294,30 @@ If_Not_Top_Window:
     add     si,bx
     add     si,1
     mov     dx,[si]
+
+    cmp     al,dl                       ;ax = bulletY; dx = matrixY
+    je      If_Coliis
     
-    push    ax
-    push    bx
-    push    dx
-    mov     dh,23
-    mov     dl,bl
-    add     dl,1
-    mov     bx,ax
-    mov     bh,2fh
-    mov     bl,bl
-    add     bx,'0'
-    call    printCharAt
-    pop     dx
-    pop     bx
-    pop     ax
-
-    ; push    ax
-    ; push    bx
-    ; push    dx
-    ; mov     bx,dx
-    ; mov     bh,2fh
-    ; ; mov     bl,
-    ; mov     dh,24
-    ; mov     dl,78
-    ; add     bx,'0'
-    ; call    printCharAt
-    ; pop     dx
-    ; pop     bx
-    ; pop     ax
-
-    
-
-    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
-    je      If_Coliis
-    sub     dx,1
-    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
-    je      If_Coliis
-    add     dx,2
-    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
-    je      If_Coliis
     jmp     Exit_If_checkBullet
 
 If_Coliis:
 
     push    dx
-    mov     dh,24
-    mov     dl,2
-    call    printRandomCharAt
+
 
     pop     dx
     mov     si,offset matrixY
     add     si,bx
-    mov     ax,0
-    mov     al,START_MATRIX_Y
+    mov     ax,-30
     mov     [si],ax
 
-    
-
-
-    mov     dx,bx
+    mov     dx,0
+    mov     dh,bl
+    add     dh,1
+    ; mov     dx,bx
     call    clearFlowMatrix
 
-    
-
-
     jmp     Exit_If_checkBullet
-
-
-
 ;--------------------------- Display Screen ----------------------
 displayScreen: ;Pass
     push    ax
@@ -862,18 +791,6 @@ printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM:
 
 
 End_Loop_PrintFlowMatrix:
-    push    bx
-    push    dx
-    mov     dh,24
-    mov     dl,printFlowMatrix_X
-    mov     bh,0fh
-    mov     bl,printFlowMatrix_Y
-    add     bx,'0'
-    call    printCharAt
-    pop     dx
-    pop     bx
-
-
     pop     bx
     mov     i,bl
     pop     dx
