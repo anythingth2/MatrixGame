@@ -4,24 +4,23 @@
     .data
 
 SEED            dw  13
+char       db  ?
 
-character       db  ?
+colorMatric db  0fh,0ah,0ah,02h,02h,00h,00h,00h
+lenghtM    db  7
 
-matrixColorCode db  0fh,0ah,0ah,02h,02h,00h,00h,00h
-matrixLength    db  7
+Top      db  0
+Left     db  30
+Right    db  50
+Bottom   db  20
 
-WINDOW_TOP      db  0
-WINDOW_LEFT     db  30
-WINDOW_RIGHT    db  50
-WINDOW_BOTTOM   db  20
-
-printFlowMatrix_X   db  ?
-printFlowMatrix_Y   db  ?
+printMX   db  ?
+printMY   db  ?
 
 
-START_MATRIX_Y  db  100
+StartMY  db  100
 
-matrixY         db  80 dup(?)
+MY         db  80 dup(?)
 
 i               db  0h
 
@@ -263,29 +262,28 @@ anyk    DB     '                          press any key to continue             
 
 ;------ variable for ship ----------------------------
 key		            db	0		;key status
-ship_x	            db	40		;ship x axis
-ship_y	            db	22		;ship y axis
-flag	            db	0
+playerX	            db	40		;ship x axis
+playerY	            db	22		;ship y axis
 
 ;------ variable for bullet --------------------------
-numBullet           db 180
-bulletX             db 180 dup(?) ;bullet in x   
-bulletY             db 180 dup(?) ;bullet in y
+Nbullet           db 180
+bX             db 180 dup(?) ;bullet in x   
+bY             db 180 dup(?) ;bullet in y
 currentBullet       db 0
 
-i_updateBullet      db 0
+iB      db 0
 temp                db 0
 
 
 ;--------------------ETC Variable ---------------------
-count_delay_matrix  db 0
-DELAY_MATRIX        db 10
+counter_delay  db 0
+delaym        db 10
 
     .code 
     org     0100h
 
 main:
-    call    displayScreen
+    call    showGame
     
 
 check:
@@ -415,78 +413,78 @@ checkenter:
         cmp     m,2
         je      if_hell
 if_easy:
-    mov     WINDOW_LEFT,30
-    mov     WINDOW_RIGHT,50
+    mov     Left,30
+    mov     Right,50
 
-    mov     bx,offset easyWindow
-    
-    jmp     initMatrix
+    mov     Nbullet,offset easyWindow
+
+    jmp     create
 if_hard:
-    mov     WINDOW_LEFT,20
-    mov     WINDOW_RIGHT,60
+    mov     Left,20
+    mov     Right,60
 
-    mov     bx,offset hardWindow
-    jmp     initMatrix
+    mov     Nbullet,offset hardWindow
+    jmp     create
 if_hell:
-    mov     WINDOW_LEFT,10
-    mov     WINDOW_RIGHT,70
+    mov     Left,10
+    mov     Right,70
 
-    mov     bx,offset hellWIndow
-    jmp     initMatrix
+    mov     Nbullet,offset hellWIndow
+    jmp     create
 
-initMatrix:                             ;initilize matrix line
+create:                             ;initilize matrix line
     call    clearScreen
 
     mov     dh,0
     mov     ch,0ah
     call    printStringAt
 
-    call    displayShip
+    call    showPlayer
     
-    mov     bl,WINDOW_LEFT              ;looping around window size
+    mov     bl,Left              ;looping around window size
     mov     i,bl
-loop_initMatrix:                        ;initilize by random number to matrixY
-    mov     bx,0
-    mov     bl,WINDOW_RIGHT
+loopCreate:                        ;initilize by random number to MY
+    mov     Nbullet,0
+    mov     bl,Right
 
     cmp     i,bl
-    jge     End_Loop_initMatrix
+    jge     end_loopCreate
 
-    mov     dl,START_MATRIX_Y           ;random number from START_MATRIX_Y to 0
+    mov     dl,StartMY           ;random number from StartMY to 0
     neg     dl                          
     mov     dh,0
     call    random_number
     neg     dl
 
 
-    mov     si,offset matrixY           ;store in matrixY
+    mov     si,offset MY           ;store in MY
     add     si,word ptr [i]
     mov     [si],dl
 
     add     i,1
-    jmp     loop_initMatrix
+    jmp     loopCreate
 
-End_Loop_initMatrix:
+end_loopCreate:
 
 
-Game_loop:                      
-    add     count_delay_matrix,1    ;count_delay_matrix++
+Infinity:                      
+    add     counter_delay,1    ;counter_delay++
 ;----------------------------------------------------
-    call    InIf_One                ;if (count_delay_matrix == DELAY_MATRIX)
-    call    Inif_two 
+    call    If1st                ;if (counter_delay == delaym)
+    call    If2nd 
 
     call    sleep                       ;delaying
 
 
-    jmp     Game_loop
+    jmp     Infinity
     ret
 
-;--------- if count_delay_matrix == DELAY_MATRIX -------
-InIf_One:   ;PASS
+;--------- if counter_delay == delaym -------
+If1st:   ;PASS
 
-    mov     bx,0                        ;bx is temp
-    mov     bl,DELAY_MATRIX             ;bx=DELAY_MATRIX
-    cmp     count_delay_matrix,bl       ;count_delay_matrix == DELAY_MATRIX
+    mov     Nbullet,0                        ;Nbullet is temp
+    mov     bl,delaym             ;Nbullet=delaym
+    cmp     counter_delay,bl       ;counter_delay == delaym
     je      IfONE
 
     ret
@@ -494,30 +492,30 @@ InIf_One:   ;PASS
 IfONE:   ;Pass
 
 
-    call    updateMatrix                ;update matrix function
-    call    checkBulletCollisMatrix
-    call    updateBullet
-    call    checkBulletCollisMatrix
+    call    pushMatrix                ;update matrix function
+    call    isDestory
+    call    pushBullet
+    call    isDestory
     
-    mov     count_delay_matrix,0        ;count_delay_matrix=0
+    mov     counter_delay,0        ;counter_delay=0
 
     ret
 
     
 ;------------------- if kbhit() -----------------------
-Inif_two:   ;PASS
+If2nd:   ;PASS
 
     mov     ax,0
     mov	    ah,	01
 	int	    16h			;check keyboard status
-	jnz	    onControl   ;if  pressed go to onControl
+	jnz	    getInput   ;if  pressed go to getInput
     
     ret
 
     
 ;------------------ Control -------------------------
-onControl:
-    call    clearShip
+getInput:
+    call    clearLastPlayer
     ; get Input from keybroad
     mov     ax,0
 	mov	    ah,	00		;if pressed go to check
@@ -530,57 +528,57 @@ onControl:
 	je	    CheckRight
 
     cmp     al, 77h     ;cmp w
-    je      ToShootBullet
+    je      shotd
 
-    ;displayShip
-    call    displayShip
+    ;showPlayer
+    call    showPlayer
 
     ret
 ;-------------- check LEFT ----------------------------
 CheckLeft:
     push    ax
     mov     ax,0
-    mov     al,ship_x
+    mov     al,playerX
 
-    cmp     al,WINDOW_LEFT
+    cmp     al,Left
     jg      goleft
 
-    call    displayShip
+    call    showPlayer
     pop     ax
     ret
 ;-------------- check Right ----------------------------
 CheckRight:
     push    ax
     mov     ax,0
-    mov     al,ship_x
+    mov     al,playerX
 
-    cmp     al,WINDOW_RIGHT
+    cmp     al,Right
     jl      goright
 
-    call    displayShip
+    call    showPlayer
     pop     ax
     ret
 
     
 
 ;------------------------------------------------------
-clearShip:
+clearLastPlayer:
     push	ax
-	push	bx
+	push	Nbullet
 	push	cx
     push    dx
 
-    mov     dh,ship_y
-    mov     dl,ship_x
+    mov     dh,playerY
+    mov     dl,playerX
     call    printAt
     
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
 
@@ -590,129 +588,128 @@ clearShip:
 
     pop     dx
 	pop	    cx
-	pop	    bx
+	pop	    Nbullet
 	pop	    ax
 ret
-;-------- ToShootBullet Because out of Range ---------
-ToShootBullet:
+;-------- shotd Because out of Range ---------
+shotd:
     call   shootBullet
 ret
 ;----------------- GoLeft -----------------------------
 goleft:
-	sub	    ship_x,1
-    call    displayShip
+	sub	    playerX,1
+    call    showPlayer
     pop     ax
 ret
 
 ;------------------- GoRight -------------------------
 goright:
-    add 	ship_x,1
-    call    displayShip
+    add 	playerX,1
+    call    showPlayer
 
     pop     ax
 ret
 
-checkBulletCollisMatrix:
+isDestory:
     push    dx       
     push    cx
-    push    bx
+    push    Nbullet
     push    ax
     mov     cx,0
-    mov     cl,WINDOW_RIGHT
-    sub     cl,WINDOW_LEFT
-loop_all_matrix:
-    add     cl,WINDOW_LEFT
-    mov     bx,cx                   ;bx iterate number of matrix
+    mov     cl,Right
+    sub     cl,Left
+loopMatrix:
+    add     cl,Left
+    mov     Nbullet,cx                   ;Nbullet iterate number of matrix
 
     mov     cx,0
-    mov     cl,numBullet            ;cx iterate number of bullet
+    mov     cl,Nbullet            ;cx iterate number of bullet
     add     cx,1
-loop_all_bullet:
-    sub     bx,1
+loopBullet:
+    sub     Nbullet,1
     sub     cx,1
 
-    mov     si,offset bulletX
+    mov     si,offset bX
     add     si,cx
     mov     ax,[si]
     sub     ax,1
-    cmp     ax,bx
-    je      If_Same_X_pos
-Exit_If_checkBullet:
+    cmp     ax,Nbullet
+    je      sameX
+exit_checkBullet:
 
     add     cx,1
-    add     bx,1
+    add     Nbullet,1
 
 
 
-    loop    loop_all_bullet
+    loop    loopBullet
 
-    mov     cx,bx
-    sub     cl,WINDOW_LEFT
-    loop    loop_all_matrix
+    mov     cx,Nbullet
+    sub     cl,Left
+    loop    loopMatrix
 
     pop     ax
-    pop     bx
+    pop     Nbullet
     pop     cx
     pop     dx
     ret
 
-
-If_Same_X_pos:
+sameX:
   
-    mov     si,offset matrixY
-    add     si,bx
+    mov     si,offset MY
+    add     si,Nbullet
     mov     ax,[si]
     mov     dx,0
-    mov     dl,WINDOW_TOP
+    mov     dl,Top
     cmp     ax,dx
-    jg      If_Not_Top_Window
-    jmp     Exit_If_checkBullet
+    jg      if_notTop
+    jmp     exit_checkBullet
 
-If_Not_Top_Window:
-    mov     si,offset bulletY
+if_notTop:
+    mov     si,offset bY
     add     si,cx
 
     mov     ax,[si]
     sub     ax,2
     
     
-    mov     si,offset matrixY
-    add     si,bx
+    mov     si,offset MY
+    add     si,Nbullet
     add     si,1
     mov     dx,[si]
 
-    cmp     al,dl                       ;ax = bulletY; dx = matrixY
-    je      If_Coliis
+    cmp     al,dl                       ;ax = bY; dx = MY
+    je      if_touch
     
-    jmp     Exit_If_checkBullet
+    jmp     exit_checkBullet
 
-If_Coliis:
+if_touch:
 
     push    dx
 
 
     pop     dx
-    mov     si,offset matrixY
-    add     si,bx
+    mov     si,offset MY
+    add     si,Nbullet
     mov     ax,-30
     mov     [si],ax
 
     mov     dx,0
     mov     dh,bl
     add     dh,1
-    ; mov     dx,bx
+    ; mov     dx,Nbullet
     call    clearFlowMatrix
 
-    jmp     Exit_If_checkBullet
+    jmp     exit_checkBullet
 ;--------------------------- Display Screen ----------------------
-displayScreen: ;Pass
+showGame: ;Pass
     push    ax
 
     mov	    ah,	00
 	mov	    al,	03h			;display 80*25
 	int 	10h
 
-    mov     bx,offset tittxt
+    mov     Nbullet,offset tittxt
     mov     ch,0fh
     mov     dh,0
     call    printStringAt
@@ -720,7 +717,7 @@ displayScreen: ;Pass
 
     call    SoundStart
 
-    mov     bx,offset anyk
+    mov     Nbullet,offset anyk
     mov     ch,0fh
     mov     dh,15
     call    printStringAt
@@ -728,24 +725,24 @@ displayScreen: ;Pass
 
     pop     ax
 ret
-;------------------------- displayShip ----------------------------
-displayShip:
+;------------------------- showPlayer ----------------------------
+showPlayer:
     push	ax
-	push	bx
+	push	Nbullet
 	push	cx
     push    dx
 
-    mov     dh,ship_y
-    mov     dl,ship_x
+    mov     dh,playerY
+    mov     dl,playerX
     call    printAt
     
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
 
@@ -755,78 +752,78 @@ displayShip:
     
     pop     dx
 	pop	    cx
-	pop	    bx
+	pop	    Nbullet
 	pop	    ax
 ret
 ;---------------------------------------------------------------
 shootBullet:        ;PASS
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
     push    si
 
-;----------------currentBullet = (currentBullet + 1) % numBullet;---------
+;----------------currentBullet = (currentBullet + 1) % Nbullet;---------
     add     currentBullet,1             ;(currentBullet + 1)
     mov     dx,0                        ;clear dx
     mov     ax,0
     mov     al,currentBullet            ;dividend
     mov     cx,0                        
-    mov     cl,numBullet                ;divisor
+    mov     cl,Nbullet                ;divisor
     div     cx              
     mov     currentBullet,dl            ;ax=/ || dx=%
 
-    ;ax bx cx dx si can use
-;----------------bulletX[currentBullet] = shipX --------------------------
-    mov     si,offset bulletX           
-    mov     bx,0                        ;clear bx for shipX
-    mov     bl,ship_x
+    ;ax Nbullet cx dx si can use
+;----------------bX[currentBullet] = playerX --------------------------
+    mov     si,offset bX           
+    mov     Nbullet,0                        ;clear Nbullet for playerX
+    mov     bl,playerX
     mov     dx,0                        ;clear dx for currentBullet
     mov     dl,currentBullet
     add     si,dx
-    mov     [si],bl                     ;bulletX[currentBullet] = shipX
-    ;ax bx cx dx si can use
+    mov     [si],bl                     ;bX[currentBullet] = playerX
+    ;ax Nbullet cx dx si can use
 
-;----------------bulletY[currentBullet] = WINDOW_BOTTOM;------------------
-    mov     si,offset bulletY           
-    mov     bx,0                        ;clear bx for WINDOW_BOTTOM
-    mov     bl,WINDOW_BOTTOM
+;----------------bY[currentBullet] = Bottom;------------------
+    mov     si,offset bY           
+    mov     Nbullet,0                        ;clear Nbullet for Bottom
+    mov     bl,Bottom
     mov     dx,0                        ;clear dx for currentBullet
     mov     dl,currentBullet
     add     si,dx
-    mov     [si],bl                     ;bulletX[currentBullet] = WINDOW_BOTTOM
-    ;ax bx cx dx si can use
+    mov     [si],bl                     ;bX[currentBullet] = Bottom
+    ;ax Nbullet cx dx si can use
 
 ;-------------------------------------------------------------------------
-    call    displayShip
+    call    showPlayer
     jmp     Exit
 ret
-;---------------- for cx= numBullet cx>0 ---------------
-updateBullet:
+;---------------- for cx= Nbullet cx>0 ---------------
+pushBullet:
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
     push    si
     
     mov     dx,0
-    mov     dl,numBullet        
+    mov     dl,Nbullet        
     mov     cx,0
     mov     cx,dx              ; cx is i in LOOP for
 
-    ;CX CANT USE [ax,bx,dx,si can use] 
+    ;CX CANT USE [ax,Nbullet,dx,si can use] 
 ;-------------------- In Loop For----- ---------------
-updateBullet_Loop:;pass
+loop_push_bulet:;pass
     push    cx                  ; store cx(i)    
 
-    mov     si,offset bulletY   ; bulletY[]
+    mov     si,offset bY   ; bY[]
     mov     ax,0                ; clear ax for temp
-    mov     al,i_updateBullet   ; temp=i_updateBullet
-    add     si,ax               ; bulletY[i]
+    mov     al,iB   ; temp=iB
+    add     si,ax               ; bY[i]
     mov     ax,0                ; clear ax for tempAX
-    mov     al,[si]             ; tempAX = bulletY[i]
+    mov     al,[si]             ; tempAX = bY[i]
 
-    cmp     al,WINDOW_TOP
+    cmp     al,Top
     jle     printBulletss
 
     mov     temp,0
@@ -835,75 +832,75 @@ updateBullet_Loop:;pass
     
     mov     ax,0
     mov     al,temp
-    mov     [si],al             ;bulletY[i]--
+    mov     [si],al             ;bY[i]--
 printBulletss:
     call    printBullet
 
-    add     i_updateBullet,1            ;i++
+    add     iB,1            ;i++
     pop     cx
-    loop    updateBullet_Loop
+    loop    loop_push_bulet
     ;End loop
-    mov     i_updateBullet,0            ;i=0
+    mov     iB,0            ;i=0
     jmp     Exit
 ret
-    ;ax,bx,cx,dx,si can use
+    ;ax,Nbullet,cx,dx,si can use
 ;--------------------------------------------------------
 
 
 printBullet:
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
     push    si
 
-;------------ IF bulletY[i] > WINDOW_TOP - 1 -------------
-    mov     si,offset bulletY           ;bulletY[]
+;------------ IF bY[i] > Top - 1 -------------
+    mov     si,offset bY           ;bY[]
     mov     cx,0                        ;clear CX
-    mov     cl,i_updateBullet
-    add     si,cx                       ;bulletY[i]
+    mov     cl,iB
+    add     si,cx                       ;bY[i]
     
     mov     cx,0                        ;clear CX
-    mov     cl,WINDOW_TOP
+    mov     cl,Top
     mov     temp,0               
-    mov     temp,cl                     ;temp=WINDOW_TOP
-    sub     temp,1                      ;temp=WINDOW_TOP - 1
+    mov     temp,cl                     ;temp=Top
+    sub     temp,1                      ;temp=Top - 1
 
     mov     cx,0                        
-    mov     cl,[si]                     ;cl=bulletY[i]
-    cmp     cl,temp                     ;cmp bulletY[i],WINDOW_TOP
+    mov     cl,[si]                     ;cl=bY[i]
+    cmp     cl,temp                     ;cmp bY[i],Top
     jg      IF_printBullet
 
-;------------ELSEIF bulletY[i] == WINDOW_TOP - 1 ---------
+;------------ELSEIF bY[i] == Top - 1 ---------
     je      ELSEIF_printBullet
 
 ;---------------------------------------------------------
     jmp     Exitprint
 ret
-    ;ax bx cx dx can use
+    ;ax Nbullet cx dx can use
 
 IF_printBullet:
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
 ;----------------------- Start If -------------------------
     mov     dx,0        
-    mov     dl,i_updateBullet       ;dx=i_updateBullet
+    mov     dl,iB       ;dx=iB
 
-;--------- bulletX[i_updateBullet] -------------------
-    mov     si,offset bulletX       ;bulleX[]      
-    add     si,dx                   ;bullet[i_updateBullet]
+;--------- bX[iB] -------------------
+    mov     si,offset bX       ;bulleX[]      
+    add     si,dx                   ;bullet[iB]
     
     mov     ax,0                    ;ax for temp     
-    mov     al,[si]                 ;al=bulletX[i_updateBullet]
-;--------- bulletY[i_updateBullet] ------------------
+    mov     al,[si]                 ;al=bX[iB]
+;--------- bY[iB] ------------------
 
-    mov     si,offset bulletY       ;bulletY[]
-    add     si,dx                   ;bulletY[i_updateBullet]
+    mov     si,offset bY       ;bY[]
+    add     si,dx                   ;bY[iB]
 
-    mov     bx,0                    ;bx for temp1
-    mov     bl,[si]                 ;bl=bulletY[i_updateBullet]
+    mov     Nbullet,0                    ;Nbullet for temp1
+    mov     bl,[si]                 ;bl=bY[iB]
     sub     bl,1    
 
 ;------------- PRINT YELLOW---------------------------------
@@ -911,16 +908,16 @@ IF_printBullet:
     mov     dl,al       ;x
     
     push    ax
-    push    bx
+    push    Nbullet
     mov     ax,0
 
     call    printAt
 
-    pop     bx
+    pop     Nbullet
     pop     ax 
 
     push    ax
-    push    bx
+    push    Nbullet
     push    cx 
 
     mov     al,0f9h      ;ascii
@@ -933,38 +930,38 @@ IF_printBullet:
 
 ;----------------------- Print BLACK -------------------------
     mov     dx,0        
-    mov     dl,i_updateBullet       ;dx=i_updateBullet
+    mov     dl,iB       ;dx=iB
 
-;--------- bulletX[i_updateBullet] -------------------
-    mov     si,offset bulletX       ;bulleX[]      
-    add     si,dx                   ;bullet[i_updateBullet]
+;--------- bX[iB] -------------------
+    mov     si,offset bX       ;bulleX[]      
+    add     si,dx                   ;bullet[iB]
     
     mov     ax,0                    ;ax for temp     
-    mov     al,[si]                 ;al=bulletX[i_updateBullet]
-;--------- bulletY[i_updateBullet] + 1 ------------------
+    mov     al,[si]                 ;al=bX[iB]
+;--------- bY[iB] + 1 ------------------
 
-    mov     si,offset bulletY       ;bulletY[]
-    add     si,dx                   ;bulletY[i_updateBullet]
+    mov     si,offset bY       ;bY[]
+    add     si,dx                   ;bY[iB]
 
-    mov     bx,0                    ;bx for temp1
-    mov     bl,[si]                 ;bl=bulletY[i_updateBullet]    
-    ;add     bl,1                    ;bl = bulletY[i_updateBullet]+1
+    mov     Nbullet,0                    ;Nbullet for temp1
+    mov     bl,[si]                 ;bl=bY[iB]    
+    ;add     bl,1                    ;bl = bY[iB]+1
 
 ;------------- PRINT ---------------------------------
     mov     dh,bl       ;y
     mov     dl,al       ;x
     
     push    ax
-    push    bx
+    push    Nbullet
     mov     ax,0
 
     call    printAt
 
-    pop     bx
+    pop     Nbullet
     pop     ax 
 
     push    ax
-    push    bx
+    push    Nbullet
     push    cx 
 
     mov     al,0f9h      ;ascii
@@ -979,7 +976,7 @@ IF_printBullet:
 ;---------------------------- End if ---------------------
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 
     jmp     Exitprint
@@ -988,44 +985,44 @@ ret
 
 ELSEIF_printBullet:
     push    ax
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
 
 ;----------------------- Print BLACK -------------------------
     mov     dx,0        
-    mov     dl,i_updateBullet       ;dx=i_updateBullet
+    mov     dl,iB       ;dx=iB
 
-;--------- bulletX[i_updateBullet] -------------------
-    mov     si,offset bulletX       ;bulleX[]      
-    add     si,dx                   ;bullet[i_updateBullet]
+;--------- bX[iB] -------------------
+    mov     si,offset bX       ;bulleX[]      
+    add     si,dx                   ;bullet[iB]
     
     mov     ax,0                    ;ax for temp     
-    mov     al,[si]                 ;al=bulletX[i_updateBullet]
-;--------- bulletY[i_updateBullet] + 1 ------------------
+    mov     al,[si]                 ;al=bX[iB]
+;--------- bY[iB] + 1 ------------------
 
-    mov     si,offset bulletY       ;bulletY[]
-    add     si,dx                   ;bulletY[i_updateBullet]
+    mov     si,offset bY       ;bY[]
+    add     si,dx                   ;bY[iB]
 
-    mov     bx,0                    ;bx for temp1
-    mov     bl,[si]                 ;bl=bulletY[i_updateBullet]    
-    ;add     bl,1                    ;bl = bulletY[i_updateBullet]+1
+    mov     Nbullet,0                    ;Nbullet for temp1
+    mov     bl,[si]                 ;bl=bY[iB]    
+    ;add     bl,1                    ;bl = bY[iB]+1
 
 ;------------- PRINT ---------------------------------
     mov     dh,bl       ;y
     mov     dl,al       ;x
     
     push    ax
-    push    bx
+    push    Nbullet
     mov     ax,0
 
     call    printAt
 
-    pop     bx
+    pop     Nbullet
     pop     ax 
 
     push    ax
-    push    bx
+    push    Nbullet
     push    cx 
 
     mov     al,0f9h      ;ascii
@@ -1039,7 +1036,7 @@ ELSEIF_printBullet:
 ;---------------------------- End if ---------------------
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 
     jmp     Exitprint
@@ -1050,7 +1047,7 @@ Exitprint:
     pop     si
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 ret
 
@@ -1071,80 +1068,80 @@ printColor:
     int     10h
 ret
 
-updateMatrix:                           ;make matrix go down 
+pushMatrix:                           ;make matrix go down 
     push    cx                          ;and check matrix is ended
     push    si
 
     mov     cx,0
-    mov     cl,WINDOW_LEFT
+    mov     cl,Left
     mov     i,cl
-loop_updateMatrix:
-    mov     cl,WINDOW_RIGHT
+loop_push_Matrix:
+    mov     cl,Right
     cmp     i,cl
-    jge     End_loop_updateMatrix
+    jge     end_loop_pushMatrix
 ;LOOP BODY:
-    mov     si,offset matrixY
+    mov     si,offset MY
     add     si,word ptr [i]
     add     [si],1
 
     mov     cl,[si]             
-    mov     printFlowMatrix_Y,cl        ;set y axis
+    mov     printMY,cl        ;set y axis
     mov     ch,i
-    mov     printFlowMatrix_X,ch        ;set x axis
+    mov     printMX,ch        ;set x axis
     
-    call    printFlowMatrix             ;print matrix
+    call    showMatrixLine             ;print matrix
     
-    call    checkMatrixEnded
+    call    matrixAtBottom
 ;END_LOOP_BODY
 
     mov     si,offset i
     add     [si],1
-    jmp     loop_updateMatrix
-End_loop_updateMatrix:
+    jmp     loop_push_Matrix
+end_loop_pushMatrix:
     pop     si
     pop     cx
     ret
     
-checkMatrixEnded:                       ;check Matrix line is bottom of window
+matrixAtBottom:                       ;check Matrix line is bottom of window
     push    dx
-    mov     dh,printFlowMatrix_X        ;if matrix on bottom -> take damagge
-    mov     dl,printFlowMatrix_Y        ;and start matrix again
+    mov     dh,printMX        ;if matrix on bottom -> take damagge
+    mov     dl,printMY        ;and start matrix again
                                         ;and clear matrix
 
-    cmp     dl,WINDOW_BOTTOM
-    je      If_MatrixEnded
-Exit_If_MatrixEnded:
+    cmp     dl,Bottom
+    je      if_matrixAtBottom
+Exit_matrixAtBottom:
 
 
     pop     dx
     ret
     
-If_MatrixEnded:
+if_matrixAtBottom:
     push    cx
 ;start new matrix
     mov     cx,0
     mov     cl,dh
-    mov     si,offset matrixY
+    mov     si,offset MY
     add     si,cx
 
     mov     cx,0
-    mov     cl,START_MATRIX_Y
+    mov     cl,StartMY
     mov     [si],cl                                 
 ;start new matrix END
 
     ; mov     xPos,dh
     call    clearFlowMatrix
     
-    call    gotDamaged
+    call    hurt
 
     pop     cx
-    jmp     Exit_If_MatrixEnded
-refreshLife:
-    push    bx
+    jmp     Exit_matrixAtBottom
+showLife:
+    push    Nbullet
     push    dx
     push    cx
 
-    mov     bx,offset lifeStatus
+    mov     Nbullet,offset lifeStatus
     mov     dh,23
     mov     ch,14
     call    printStringAt
@@ -1158,20 +1155,20 @@ refreshLife:
 
     pop     cx
     pop     dx
-    pop     bx
+    pop     Nbullet
     ret
-gotDamaged:
+hurt:
     sub     life,1
-    call    refreshLife
+    call    showLife
 
     cmp     life,0
-    je      died
+    je      game_endeded
     ret
 
-died:
+game_endeded:
     call    clearScreen
     
-    mov     bx,offset overS
+    mov     Nbullet,offset overS
     mov     dh,0
     mov     ch,0fh
     call    printStringAt
@@ -1179,43 +1176,42 @@ died:
 
     
 
-printFlowMatrix:
+showMatrixLine:
     push    cx
-    push    bx
+    push    Nbullet
     push    si
     push    dx
-    mov     bx,0
+    mov     Nbullet,0
     mov     bl,i
-    push    bx
+    push    Nbullet
 
     mov     i,0h
-    
-loop_printFlowMatrix:
+
+loop_showMatrixLine:
     mov     cx,0
-    mov     cl,matrixLength
+    mov     cl,lenghtM
     cmp     i,cl
     jge     End_Loop_PrintFlowMatrix
     
-    mov     cl,printFlowMatrix_Y
+    mov     cl,printMY
     sub     cl,i
 
-    cmp     cl,WINDOW_TOP
+    cmp     cl,Top
     jge     printFlowMatrix_IF_GREATERTHAN_WINDOWTOP
 End_printFlowMatrix_IF_GREATERTHAN_WINDOWTOP:
 
     add     i,1
-    jmp     loop_printFlowMatrix
+    jmp     loop_showMatrixLine
 
 
 printFlowMatrix_IF_GREATERTHAN_WINDOWTOP:
-    cmp     cl,WINDOW_BOTTOM
+    cmp     cl,Bottom
     jl      printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM
     jmp     End_printFlowMatrix_IF_GREATERTHAN_WINDOWTOP
 
 printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM:
 
-
-    mov     si,OFFSET matrixColorCode
+    mov     si,OFFSET colorMatric
     mov     dx,0
     mov     dl,i
     add     si,dx
@@ -1223,27 +1219,27 @@ printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM:
 
 
     mov     dh,cl
-    mov     dl,printFlowMatrix_X
+    mov     dl,printMX
     call    printRandomCharAt
 
     jmp     End_printFlowMatrix_IF_GREATERTHAN_WINDOWTOP
 
 
 End_Loop_PrintFlowMatrix:
-    pop     bx
+    pop     Nbullet
     mov     i,bl
     pop     dx
     pop     si
-    pop     bx
+    pop     Nbullet
     pop     cx
     ret
 clearFlowMatrix:
-    push    bx
+    push    Nbullet
     push    cx
     push    dx
 
     mov     cx,0
-    mov     cl,WINDOW_BOTTOM
+    mov     cl,Bottom
 
 
     mov     dl,dh                       ;input X-axis is dh
@@ -1259,7 +1255,7 @@ loop_clearFlowMatrix:                   ;dh is Y-axis; dl is X-axis
 
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     ret
 random_number:              ;random number from dh to dl
     
@@ -1300,7 +1296,7 @@ random_number:              ;random number from dh to dl
     pop     ax
 
     ret
-printRandomCharAt:                          ;print random character at position (dh = row,dl = column)
+printRandomCharAt:                          ;print random char at position (dh = row,dl = column)
                                             ;with color ( bl = color code)
 
     push    ax
@@ -1324,10 +1320,10 @@ printRandomCharAt:                          ;print random character at position 
     
     mov     dh,33
     mov     dl,126
-    call    random_number                   ;random character decimal number
+    call    random_number                   ;random char decimal number
 
     mov     ah,bl                           ;store color data
-    mov     al,dl                           ;store character
+    mov     al,dl                           ;store char
     stosw                                   ;write video ram
 
     pop     dx
@@ -1336,7 +1332,7 @@ printRandomCharAt:                          ;print random character at position 
 
     ret
 
-printCharAt:                            ;print character at position (dh = row,dl = column)
+printCharAt:                            ;print char at position (dh = row,dl = column)
                                             ;color ( bh = color code)
                                             ;chacracter (bl = ascii)
 
@@ -1359,7 +1355,7 @@ printCharAt:                            ;print character at position (dh = row,d
     mul     dx
     mov     di,ax                           ;store address offset to di
     
-    mov     ax,bx                           ;store color data                                        ;store character
+    mov     ax,Nbullet                           ;store color data                                        ;store char
     stosw                                   ;write video ram
 
     pop     dx
@@ -1368,7 +1364,7 @@ printCharAt:                            ;print character at position (dh = row,d
 
     ret
 printStringAt:                              ;print String at position (dh = row)
-                                            ;bx = String address
+                                            ;Nbullet = String address
                                             ;ch = color
     
     push    ax
@@ -1380,17 +1376,17 @@ printStringAt:                              ;print String at position (dh = row)
     mul     dx
     mov     di,ax
 
-loop_printStringAt:                         ;print character until find '$'
+loop_printStringAt:                         ;print char until find '$'
     
 
     mov     ax,0B800h                       ;select video ram address
     mov     es,ax                           
-    mov     ax,[bx]                          ;store color data  
-    cmp     al,'$'                          ;if character is '$' -> stop print
+    mov     ax,[Nbullet]                          ;store color data  
+    cmp     al,'$'                          ;if char is '$' -> stop print
     je      Exit_loop_printStringAt 
-    mov     ah,ch                                      ;store character
+    mov     ah,ch                                      ;store char
     stosw                                   ;write video ram
-    add     bx,1
+    add     Nbullet,1
 
     jmp     loop_printStringAt
 Exit_loop_printStringAt:
@@ -1468,22 +1464,22 @@ LDone: mov  dx,61h                  ; turn speaker off
 ;-------------------------------------------------------------
 clearScreen:
     push    dx
-    push    bx
+    push    Nbullet
     push    cx
 
-    mov     bx,offset   blankScreen
+    mov     Nbullet,offset   blankScreen
     mov     dh,0
     mov     ch,0h
     call    printStringAt
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     dx
     ret
 Exit:
     pop     si
     pop     dx
     pop     cx
-    pop     bx
+    pop     Nbullet
     pop     ax
 ret
 
