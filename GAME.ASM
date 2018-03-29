@@ -106,10 +106,12 @@ InIf_One:   ;PASS
 
 IfONE:   ;Pass
 
-    ;updateMatrix
+
     call    updateMatrix                ;update matrix function
+    call    checkBulletCollisMatrix
     call    updateBullet
-    ;checkBulletCollisMatrix
+    call    checkBulletCollisMatrix
+    
 
     mov     count_delay_matrix,0        ;count_delay_matrix=0
 
@@ -224,6 +226,169 @@ goright:
     pop     ax
 ret
 
+checkBulletCollisMatrix:
+    push    dx       
+    push    cx
+    push    bx
+    push    ax
+    mov     cx,0
+    mov     cl,WINDOW_RIGHT
+    sub     cl,WINDOW_LEFT
+loop_all_matrix:
+    add     cl,WINDOW_LEFT
+    mov     bx,cx                   ;bx iterate number of matrix
+
+    mov     cx,0
+    mov     cl,numBullet            ;cx iterate number of bullet
+    add     cx,1
+loop_all_bullet:
+    sub     bx,1
+    sub     cx,1
+
+    mov     si,offset bulletX
+    add     si,cx
+    mov     ax,[si]
+    sub     ax,1
+    cmp     ax,bx
+    je      If_Same_X_pos
+Exit_If_checkBullet:
+
+    add     cx,1
+    add     bx,1
+
+
+
+    loop    loop_all_bullet
+
+    mov     cx,bx
+    sub     cl,WINDOW_LEFT
+    loop    loop_all_matrix
+
+    pop     ax
+    pop     bx
+    pop     cx
+    pop     dx
+    ret
+
+
+If_Same_X_pos:
+  
+;    mov     dh,24
+;     mov     dl,2
+;     call    printRandomCharAt
+
+    ; push    bx
+    ; push    dx
+    ; mov     dh,24
+    ; mov     dl,79
+    ; mov     bh,2fh
+    ; mov     bl,bl
+    ; add     bx,'0'
+    ; call    printCharAt
+    ; pop     dx
+    ; pop     bx
+
+    ; push    bx
+    ; push    dx
+    ; mov     dh,24
+    ; mov     dl,78
+    ; mov     bh,2fh
+    ; mov     bl,cl
+    ; add     bx,'0'
+    ; call    printCharAt
+    ; pop     dx
+    ; pop     bx
+
+    mov     si,offset matrixY
+    add     si,bx
+    mov     ax,[si]
+    mov     dx,0
+    mov     dl,WINDOW_TOP
+    cmp     ax,dx
+    jg      If_Not_Top_Window
+    jmp     Exit_If_checkBullet
+
+If_Not_Top_Window:
+    mov     si,offset bulletY
+    add     si,cx
+
+    mov     ax,[si]
+    sub     ax,2
+    
+    
+    mov     si,offset matrixY
+    add     si,bx
+    add     si,1
+    mov     dx,[si]
+    
+    push    ax
+    push    bx
+    push    dx
+    mov     dh,23
+    mov     dl,bl
+    add     dl,1
+    mov     bx,ax
+    mov     bh,2fh
+    mov     bl,bl
+    add     bx,'0'
+    call    printCharAt
+    pop     dx
+    pop     bx
+    pop     ax
+
+    ; push    ax
+    ; push    bx
+    ; push    dx
+    ; mov     bx,dx
+    ; mov     bh,2fh
+    ; ; mov     bl,
+    ; mov     dh,24
+    ; mov     dl,78
+    ; add     bx,'0'
+    ; call    printCharAt
+    ; pop     dx
+    ; pop     bx
+    ; pop     ax
+
+    
+
+    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
+    je      If_Coliis
+    sub     dx,1
+    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
+    je      If_Coliis
+    add     dx,2
+    cmp     ax,dx                       ;ax = bulletY; dx = matrixY
+    je      If_Coliis
+    jmp     Exit_If_checkBullet
+
+If_Coliis:
+
+    push    dx
+    mov     dh,24
+    mov     dl,2
+    call    printRandomCharAt
+
+    pop     dx
+    mov     si,offset matrixY
+    add     si,bx
+    mov     ax,0
+    mov     al,START_MATRIX_Y
+    mov     [si],ax
+
+    
+
+
+    mov     dx,bx
+    call    clearFlowMatrix
+
+    
+
+
+    jmp     Exit_If_checkBullet
+
+
+
 ;--------------------------- Display Screen ----------------------
 displayScreen: ;Pass
     push    ax
@@ -334,7 +499,7 @@ updateBullet_Loop:;pass
 
     cmp     al,WINDOW_TOP
     jle     printBulletss
-    
+
     mov     temp,0
     mov     temp,al             ; temp = tempAX
     sub     temp,1              ;
@@ -644,16 +809,6 @@ If_MatrixEnded:
     ; mov     xPos,dh
     call    clearFlowMatrix
     
-    push    dx
-    push    bx
-    mov     dh,24
-    mov     dl,0
-    mov     bl,0fh
-    call    printRandomCharAt
-    pop     bx
-    pop     dx
-
-
     pop     cx
     jmp     Exit_If_MatrixEnded
 printFlowMatrix:
@@ -707,6 +862,17 @@ printFlowMatrix_IF_LESSTHAN_WINDOWBOTTOM:
 
 
 End_Loop_PrintFlowMatrix:
+    push    bx
+    push    dx
+    mov     dh,24
+    mov     dl,printFlowMatrix_X
+    mov     bh,0fh
+    mov     bl,printFlowMatrix_Y
+    add     bx,'0'
+    call    printCharAt
+    pop     dx
+    pop     bx
+
 
     pop     bx
     mov     i,bl
@@ -724,7 +890,7 @@ clearFlowMatrix:
     mov     cl,WINDOW_BOTTOM
 
 
-    mov     dl,dh
+    mov     dl,dh                       ;input X-axis is dh
     
 loop_clearFlowMatrix:                   ;dh is Y-axis; dl is X-axis
     mov     dh,cl
@@ -876,11 +1042,12 @@ Exit_loop_printStringAt:
     ret
 sleep:
     push    cx
-    mov     cx,00fffh
+    mov     cx,05f0fh
 loop_sleep:
     nop                                     ;do nothing
     nop     
-        
+
+         
 
     loop    loop_sleep                      ;loop until cx is zero
     pop     cx
