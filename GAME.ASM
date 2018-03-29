@@ -126,6 +126,87 @@ blankScreen db	'                                                                
             db	'                                                                                '
             db	'                                                                                '
             db	'                                                                                $'
+
+             
+easyWindow  db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            '
+            db  '                             |                     |                            $'
+
+hardWindow  db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  '
+            db  '                   |                                         |                  $'
+ hellWindow db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        '
+            db  '         |                                                             |        $'
+
+
+
+
+
 lifeStatus  db  '                                                                          Life$'
 overS	DB     '                                                                               ', 0
 	DB     '                                                                               ', 0
@@ -336,18 +417,30 @@ checkenter:
 if_easy:
     mov     WINDOW_LEFT,30
     mov     WINDOW_RIGHT,50
+
+    mov     bx,offset easyWindow
+    
     jmp     initMatrix
 if_hard:
     mov     WINDOW_LEFT,20
     mov     WINDOW_RIGHT,60
+
+    mov     bx,offset hardWindow
     jmp     initMatrix
 if_hell:
     mov     WINDOW_LEFT,10
     mov     WINDOW_RIGHT,70
+
+    mov     bx,offset hellWIndow
     jmp     initMatrix
 
 initMatrix:                             ;initilize matrix line
     call    clearScreen
+
+    mov     dh,0
+    mov     ch,0ah
+    call    printStringAt
+
     call    displayShip
     
     mov     bl,WINDOW_LEFT              ;looping around window size
@@ -943,10 +1036,7 @@ ELSEIF_printBullet:
     pop     ax
     pop     ax    
 
-
 ;---------------------------- End if ---------------------
-
-    
     pop     dx
     pop     cx
     pop     bx
@@ -1080,6 +1170,12 @@ gotDamaged:
 
 died:
     call    clearScreen
+    
+    mov     bx,offset overS
+    mov     dh,0
+    mov     ch,0fh
+    call    printStringAt
+    .exit
 
     
 
